@@ -1,0 +1,84 @@
+import Data.List
+
+main :: IO()
+main = do
+    print "Ex. 1"
+    print (findSum 0 2 10)
+    print (findSum 5 3 5)
+    print "Ex. 2"
+    print (isSquare 1)
+    print (isSquare 2)
+    print (isSquare 4)
+    print (isSquare 17)
+    print (isSquare 256)
+    print (isSquare 2500)
+    print (isSquareTwo 1)
+    print (isSquareTwo 2)
+    print (isSquareTwo 4)
+    print (isSquareTwo 17)
+    print (isSquareTwo 256)
+    print (isSquareTwo 2500)
+    print "Ex. 3"
+    print (isSpecial 131 2)
+    print (isSpecial 472 2)
+    print (isSpecial 17197 2)
+    print (isSpecial 12234 3)
+    print (isSpecial 10113 3)
+    print (isSpecial 353 2)
+
+
+pow :: Int -> Int -> Int                                                                -- Степенуване
+pow _ 0 = 1
+pow x n = x * pow x (n - 1)
+
+findSum :: Int -> Int -> Int -> Int
+findSum a b n =
+    if n < 3 then error "n must be greater than 3"
+    else helper a b (n - 1) + helper a b (n - 2) + helper a b (n - 3)                   -- Проверка за n и рекурсивно решение за пресмятане на членовете на редицата
+            where
+                helper a b n =
+                    if n == 0 then a + b
+                    else helper a b (n - 1) + (pow 2 n) * b
+
+isSquare :: Int -> Bool                                                                 -- Може да има и по-просто решение, предпдолагам
+isSquare x = helper 1 x
+    where
+        helper i x =
+            if i * i == x then True
+            else if i * i > x then False
+            else helper (i + 1) x
+
+isSquareTwo :: Int-> Bool
+isSquareTwo n = n `elem` [x * x | x <- [1..10000]]
+
+isPrime :: Integer -> Bool                                                              -- Дали е просто число
+isPrime 1 = False
+isPrime n = helper 2
+    where
+        helper d
+            | d == n         = True
+            | n `mod` d == 0 = False
+            | otherwise      = helper (d + 1)
+
+checkLastNumbers :: Integer -> Int -> Bool                                              -- Проверка дали числото, което образуват последните к цифри, е просто
+checkLastNumbers n k = isPrime(n `mod` (pow 10 k))
+        where
+            pow x t =                                                                   -- Отново пиша Pow функцията, понеже за mod ми даваше грешка,
+                if t == 0 then 1                                                        -- че иска Integer, а аз му давам Int, тоест Pow (най-отгоре) връща Int
+                else x * pow x (t - 1)
+
+countDigits :: Integer -> Int
+countDigits n =
+    if n < 10
+    then 1
+    else 1 + countDigits (n `div` 10)
+
+isSpecial :: Integer -> Int -> Bool                                                     -- Рекурсивно решение за проверка на всички последователни комбинации от к на брой цифри
+isSpecial n k =                                                                         -- Тук отново може би има по-просто решение
+    if checkLastNumbers n k
+    then if countDigits (n `div` 10) == k
+         then if isPrime (n `div` 10)
+              then True
+              else False
+         else isSpecial (n `div` 10) k
+    else False

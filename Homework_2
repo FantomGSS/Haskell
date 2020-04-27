@@ -1,0 +1,116 @@
+import Data.List
+
+main :: IO()
+main = do
+    print "Ex. 1"
+    print (reverse (generate 1 3))
+    print (reverse (generate  0.1 5))
+
+    print "Ex. 2"
+    print (listSquares 1 30)
+    print (listSquares 250 300)
+
+    print "Ex. 3"
+    print (splitPoints (1,1) 5 [(1,2),(2,3),(10,15),(-1,1),(12,14)])
+    print (splitPoints (10,10) 5 [(1,2),(2,3),(10,15),(-1,1),(12,14)])
+
+    print "Ex. 4"
+    print (getAverageBalance (as,ps) (\ (_,_,city) -> city == "Burgas"))
+    print (getAverageBalance (as,ps) (\ (_,(n:_),_) -> n == 'P'))
+
+--И сам се пробвах, и из интернет си позволих да потърся, но не успях да намеря как точно да ги сведа до 2 знака след запетаята, по начина, по който са направени в примерните изходи в домашното.
+--round' :: Double -> Double
+--round' x = (fromIntegral (floor (x * 100))) / 100
+--round' x = (fromIntegral (ceiling (x * 100))) / 100
+
+--Ex. 1, Използвам fromIntegral за n, понеже степенуването с дробни числа ми изисква основата да е double.
+generateMember :: Double -> Integer -> Double
+generateMember p n =
+    if n == 1
+      then 1
+      else generateMember p (n - 1) + (1 / powFunction n p)
+               where
+                   powFunction n p = fromIntegral(n) ** p
+
+generate :: Double -> Integer -> [Double]
+generate p n =
+    if n == 1
+         then [generateMember p n]
+         else generateMember p n : generate p (n - 1)
+
+--Ex. 2,
+isSquare :: Integer -> Bool
+isSquare x = helper 1 x
+    where
+        helper i x =
+            if i * i == x then True
+            else if i * i > x then False
+            else helper (i + 1) x
+
+divisors :: Integer -> [Integer]
+divisors n = [d | d <- [1..n], n `mod` d == 0]
+
+squaresOfDivisors :: [Integer] -> [Integer]
+squaresOfDivisors xs = [x * x | x <- xs ]
+
+listOfSquaresLists :: [Integer] -> [[Integer]]
+listOfSquaresLists xs = [squaresOfDivisors (divisors u) | u <- xs]
+
+listOfSquareSums :: [[Integer]] -> [Integer]
+listOfSquareSums xs = [sum x | x <- xs ]
+
+listSquares :: Integer -> Integer ->[(Integer, Integer)]
+listSquares a b =
+    if a > b then error "The interval must start from a smaller number to a larger one"
+    else zip [u | u <- [a..b], isSquare u] (listOfSquareSums (listOfSquaresLists [t | t <- [a..b], isSquare t]))
+
+--Ex. 3, Имаме точка (x, y), център (a,b) и радиус r, използвам формулата (x - a) ^ 2 + (y - b) ^ 2 = r ^ 2 за проверката дали тази точка е в окръжността.
+type Point = (Double, Double)
+
+pow :: Double -> Int -> Double
+pow _ 0 = 1
+pow x n = x * pow x (n - 1)
+
+isInRange :: Point -> Double -> [Point] -> [Point]
+isInRange p r ps = [t | t <- ps, ((pow (fst t - fst p) 2) + (pow (snd t - snd p) 2)) <= pow r 2]
+
+isNotInRange :: Point -> Double -> [Point] -> [Point]
+isNotInRange p r ps = [t | t <- ps, ((pow (fst t - fst p) 2) + (pow (snd t - snd p) 2)) > pow r 2]
+
+splitPoints :: Point -> Double -> [Point] -> ([Point], [Point])
+splitPoints p r [] = error "You need to enter a list of points to check if they are in the circle"
+splitPoints p r ps = head (zip [isInRange p r ps] [isNotInRange p r ps])
+
+--Ex. 4,
+type Account = (Int, Int, Double)
+type Person = (Int, String, String)
+
+count :: [a] -> Int
+count []     = 0
+count (_:xs) = 1 + count xs
+
+as :: [Account]
+as = [(1, 1, 12.5), (2, 1, 123.2), (3, 2, 13.0), (4, 2, 50.2), (5, 2, 17.2), (6, 3, 18.3), (7, 4, 19.4)]
+
+ps :: [Person]
+ps = [(1, "Ivan", "Sofia"), (2, "Georgi", "Burgas"), (3, "Petar", "Plovdiv"), (4, "Petya", "Burgas")]
+
+third :: Account -> Double
+third (x, y, z) = z
+
+second :: Account -> Int
+second (x, y, z) = y
+
+first :: Person -> Int
+first (x, y, z) = x
+
+filteredListOfIDs :: [Person] -> (Person -> Bool) -> [Int]
+filteredListOfIDs ps f = [first p | p <- filter f ps];
+
+filteredListOfMoneyBalances :: [Account] -> [Int] -> [Double]
+filteredListOfMoneyBalances as ids = [third a | a <- as, second a `elem` ids]
+                                                                                               --Използвам fromIntegral, понеже ми даваше грешка при делението на Double с Int, за да възприеме Int като Double.
+getAverageBalance :: ([Account],[Person]) -> (Person -> Bool) -> Double
+getAverageBalance ([], ps) f = error "You must enter a list of accounts"
+getAverageBalance (as, []) f = error "You must enter a list of persons"
+getAverageBalance (as, ps) f = sum (filteredListOfMoneyBalances as (filteredListOfIDs ps f)) / fromIntegral (length (filteredListOfMoneyBalances as (filteredListOfIDs ps f)))
